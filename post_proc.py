@@ -27,6 +27,33 @@ def get_closest(sample,codes,names=None,limit=1):
         return cos_inds,euc_inds,None,None
 
 
+def compare_dims(sample,codes,decoder,all_names=None,approx=False):
+    dims = 32
+    nums = 6
+    plt.figure(figsize=(nums*4, dims*4))
+    counter = 0
+    font_path='font_ims_56/%s.png'                
+    for i in range(dims):
+        mx,mn = codes[:,i].max(),codes[:,i].min()
+        diff = mx-mn
+        temp_sample = sample.copy()
+        for j in range(nums):
+            print (i + (nums)*j+1)
+            ax = plt.subplot(nums, dims, i + (dims)*j+1)
+            temp_sample[i] = diff * (j/nums) + mn
+            if approx:
+                im = get_dec_image(decoder,temp_sample)
+            else:
+                _,_,_,euc_names = get_closest(temp_sample,codes,all_names)
+                img_name = euc_names[0]
+                im = impath_to_image(font_path % img_name)
+            #plt.title('-'.join(["%0.2f" %x for x in weight]),fontsize=6)
+            # plt.imshow(im.reshape(28*2, 28*2),plt.cm.binary)
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+    plt.savefig('dimchart.png')
+    # plt.show()
+
 def plot_images(img_names,font_path):
     """Function to get cluster centres and plot them"""
     n= len(img_names)
