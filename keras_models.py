@@ -147,3 +147,38 @@ def basic_vae(im_shape = (56, 56, 1)):
         return xent_loss + kl_loss
 
     return var_autoencoder,encoder,decoder,vae_loss
+
+def char_ae(im_shape = (28, 28, 1,),char_shape=(26,)):
+    input_img = Input(shape=im_shape)  # adapt this if using `channels_first` image data format
+    char_input = Input(shape=char_shape)
+    char_input = Input(shape=char_shape)
+    num_fil = [32,16,8]
+    conv_size = [(3,3),(3,3),(3,3)]
+    pool_size = [(2,2),(2,2),(2,2)]
+    x = Conv2D(num_fil[0], (3, 3), activation='relu', padding='same')(input_img)
+    x = MaxPooling2D(pool_size[0], padding='same')(x)
+    x = Conv2D(num_fil[1], (3, 3), activation='relu', padding='same')(x)
+    x = MaxPooling2D(pool_size[1], padding='same')(x)
+    x = Conv2D(num_fil[2], (3, 3), activation='relu', padding='same')(x)
+    encoded = MaxPooling2D(pool_size[2], padding='same')(x)
+
+    print ("Encoding shape :",encoded.shape)
+    print (encoded.shape)
+    
+    enc_flat = Flatten()(encoded)    
+    dec_input = Concatenate(axis=1)([char_input,enc_flat])
+    dec_input = Dense(128,activation='relu')(dec_input)
+    dec_input = Reshape((4,4,num_fil[2]))(dec_input)
+    
+    x = Conv2D(num_fil[2], (3, 3), activation='relu', padding='same')(dec_input)
+    x = UpSampling2D(pool_size[2])(x)
+    x = Conv2D(num_fil[1], (3, 3), activation='relu', padding='same')(x)
+    x = UpSampling2D(pool_size[1])(x)
+    x = Conv2D(num_fil[0], (3, 3), activation='relu')(x)
+    x = UpSampling2D(pool_size[0])(x)
+    decoded = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
+    print ("Decoder output :",decoded.shape)
+
+    autoencoder = Model([input_img,char_input], decoded)
+    encoder = Model([input_img,char_input], encoded)
+    return autoencoder,encoder
