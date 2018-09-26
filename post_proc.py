@@ -26,6 +26,35 @@ def get_closest(sample,codes,names=None,limit=1):
     else:
         return cos_inds,euc_inds,None,None
 
+def find_best(nums,codes,names,n=3):
+    sample = codes[nums]
+    sample_names = codes[nums]
+    all_choices = []
+    for samp,samp_name in sample:
+        counter = 0
+        choices = [samp_name]
+        best = get_closest(samp,codes,limit=n+5)
+        for x in best[2]:
+            if x.startswith(samp_name[:5]):
+                continue
+            else:
+                counter+=1
+                choices.append(x)
+            if counter==n:
+                all_choices.append(choices)
+                break
+    plt.figure(figsize=(len(nums)*2, (n+1)*2))
+    font_path='font_ims_56/%s.png'                
+    for i in range(len(nums)):
+        for j in range(n+1):
+            print (i + (nums)*j+1)
+            ax = plt.subplot(len(nums), n+1, j + len(nums)*i+1)
+            im = impath_to_image(font_path % img_name)
+            #plt.title('-'.join(["%0.2f" %x for x in weight]),fontsize=6)
+            plt.imshow(im.reshape(28*2, 28*2),plt.cm.binary)
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+    plt.show()
 
 def compare_dims(sample,codes,decoder,all_names=None,approx=False):
     dims = 32
