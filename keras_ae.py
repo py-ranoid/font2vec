@@ -1,9 +1,6 @@
-from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D
 from keras.models import model_from_json
 from keras.callbacks import TensorBoard
 from keras.datasets import mnist
-from keras.models import Model
-from keras import backend as K
 from keras_models import basic_ae,basic_vae
 from utils import FontAlphabetsDataset,get_all_samples
 from keras.utils import plot_model
@@ -94,3 +91,39 @@ def plot_results(autoencoder,x_test, n=10):
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
     plt.show()
+
+def main(model_fname,weights_fname,name):
+    """ main function. Called when keras_ae.py is run"""
+    if os.path.exists(model_fname) and os.path.exists(weights_fname):
+        # Loads model if it exists
+        autoencoder = load_model(model_fname,weights_fname)
+        x_train,x_test = get_data()
+        plot_results(autoencoder,x_test)
+    else:
+        # Loads dataset and trains models
+        print ("MODEL NOT FOUND")
+        autoencoder,encoder,decoder,loss = get_model()
+        autoencoder.compile(optimizer='rmsprop', loss=loss)
+        plot_model(autoencoder, to_file='model_%s.png'%name,show_shapes=True)
+        x_train,x_test = get_data()
+        autoencoder.fit(x_train, x_train,
+                        epochs=2500,
+                        batch_size=128,
+                        shuffle=True,
+                        validation_data=(x_test, x_test),
+                        callbacks=[TensorBoard(log_dir='/tmp/autoencoder_0')])
+        save_model(autoencoder,model_fname, )
+        save_model(encoder,model_fname.replace('ae_model','e_model'),weights_fname.replace('ae_weights','e_weights'))
+        save_model(decoder,model_fname.replace('ae_model','d_model'),weights_fname.replace('ae_weights','d_weights'))
+        print ("ENCODER SAVED TO")
+        print ("model_fname='%s'" % model_fname.replace('ae_model','e_model'))
+        print ("weights_fname = '%s'" % weights_fname.replace('ae_weights','e_weights'))
+        print ("from keras_ae import load_model\nencoder = load_model(model_fname,weights_fname)")
+        plot_results(autoencoder,x_test)
+
+
+if __name__ == "__main__":
+    name = "var_3445_56_dim32_allfont"
+    model_fname='models/keras_models/ae_model_%s.json' % name
+    weights_fname = 'models/keras_models/ae_weights_%s.h5' % name
+    main(model_fname,weights_fname,name)    
