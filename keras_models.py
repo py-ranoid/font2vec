@@ -129,7 +129,7 @@ def basic_vae(im_shape = (56, 56, 1)):
     print ("Decoder output :",decoded.shape)
 
     var_autoencoder = Model(input_img, decoded)
-    encoder = Model(input_img, encoded)
+    encoder = Model(input_img, z_mean)
 
     encoded_input = Input(shape=(EMBED_DIM,))
     decoder = Model(encoded_input,iter_over_layers(var_autoencoder.layers[-11:],encoded_input))
