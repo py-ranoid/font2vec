@@ -25,6 +25,103 @@ def get_closest(sample,codes,names=None,limit=1):
         return cos_inds,euc_inds,cos_names,euc_names
     else:
         return cos_inds,euc_inds,None,None
+        
+def plot_grid(corners,codes,decoder,real_ims,real_names,all_names=None,grid_size=6,approx=False,fractional=True,line=False):
+    corners = corners.reshape(4,-1)
+    # corners = corners.reshape(128,4)
+    height = 1 if line else grid_size
+    width = grid_size
+    if line:
+        corners[2:] = corners[:2]
+    plt.figure(figsize=(grid_size*3, grid_size*3))
+    counter = 0
+    coords = np.array([[0,0],[0,grid_size-1],[grid_size-1,0],[grid_size-1,grid_size-1]]).reshape(4,2)
+    for i in range(height):
+        for j in range(width):
+            ax = plt.subplot(height, width, j + (width)*i+1)
+            # if False:
+            if i % (grid_size-1) == 0 and j % (grid_size-1) == 0:
+                im = 1 - real_ims[counter]
+                plt.title(real_names[counter][:-2],fontsize=6)
+                counter+=1
+            else:
+                if fractional:
+                    quants = 1 + euclidean_distances(np.array([i,j]).reshape(1,-1),coords).reshape(4,1)
+                    inv_quants = 1/quants
+                    weight = inv_quants/(inv_quants.sum())
+                    print (i,j,weight)
+                    x = sum([corners[x]*weight[x] for x in range(4)])
+                else:
+                    quants = [max(grid_size-j-i-1,0),
+                                max(j-i,0),
+                                max(i-j,0),
+                                max(i+j+1-grid_size,0)]
+                    x = sum([corners[x]*quants[x] for x in range(4)])
+                    x = x/(grid_size-1)                
+                if approx:
+                    im = get_dec_image(decoder,x)
+                    im = 1 - im.reshape(28*2,28*2)     
+                    im = ndimage.grey_dilation(im, size=(1,1))
+                    im = ndimage.grey_erosion(im, size=(2,2))
+                else:
+                    _,_,_,x = get_closest(x,codes,all_names)
+                    img_name = x[0]
+                    print 
+                    font_path='font_ims_56/%s.png'
+                    im = impath_to_image(font_path % img_name)
+                #plt.title('-'.join(["%0.2f" %x for x in weight]),fontsize=6)
+
+            plt.imshow(im.reshape(28*2, 28*2),plt.cm.binary)
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+    plt.show()
+
+def plot_multi_line(sample_nums,codes,decoder,real_ims,real_names,all_names=None,grid_size=6,approx=False,fractional=True,line=False):
+    height = len(sample_nums) if line else grid_size
+    width = grid_size
+    plt.figure(figsize=(grid_size*3, grid_size*3))
+    counter = 0
+    coords = np.array([[0,0],[0,grid_size-1]]).reshape(2,2)
+    for i in range(height):
+        sample_vecs = codes[sample_nums[i]]
+        for j in range(width):
+            ax = plt.subplot(height, width, j + (width)*i+1)
+            # if False:
+            if j % (grid_size-1) == 0:
+                im = 1 - real_ims[counter]
+                plt.title(real_names[counter][:-2],fontsize=6)
+                counter+=1
+            else:
+                if fractional:
+                    quants = 1 + euclidean_distances(np.array([i,j]).reshape(1,-1),coords).reshape(2,1)
+                    inv_quants = 1/quants
+                    weight = inv_quants/(inv_quants.sum())
+                    print (i,j,weight)        
+                    x = sum([sample_vecs[k]*weight[k] for k in range(2)])
+                else:
+                    quants = [max(grid_size-j-i-1,0),
+                                max(j-i,0),
+                                max(i-j,0),
+                                max(i+j+1-grid_size,0)]
+                    x = sum([corners[x]*quants[x] for x in range(4)])
+                    x = x/(grid_size-1)                
+                if approx:
+                    im = get_dec_image(decoder,x)
+                    im = 1 - im.reshape(28*2,28*2)     
+                    im = ndimage.grey_dilation(im, size=(1,1))
+                    im = ndimage.grey_erosion(im, size=(2,2))
+                else:
+                    _,_,_,x = get_closest(x,codes,all_names)
+                    img_name = x[0]
+                    print 
+                    font_path='font_ims_56/%s.png'
+                    im = impath_to_image(font_path % img_name)
+                #plt.title('-'.join(["%0.2f" %x for x in weight]),fontsize=6)
+
+            plt.imshow(im.reshape(28*2, 28*2),plt.cm.binary)
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+    plt.show()
 
 def find_best(nums,codes,names,n=3):
     sample = codes[nums]
